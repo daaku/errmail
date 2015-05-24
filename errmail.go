@@ -5,18 +5,26 @@ package errmail
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net/smtp"
 	"os"
 	"strings"
 )
 
-const from = "cron@daaku.org"
+const (
+	envPassKey = "ERRMAIL_PASS"
+	from       = "cron@daaku.org"
+)
 
 var (
-	auth = smtp.PlainAuth("", from, os.Getenv("ERRMAIL_PASS"), "smtp.gmail.com")
+	auth = smtp.PlainAuth("", from, os.Getenv(envPassKey), "smtp.gmail.com")
 	to   = []string{"n@daaku.org"}
 )
+
+func init() {
+	if os.Getenv(envPassKey) == "" {
+		fmt.Fprintf(os.Stderr, "%s must be set for errmail\n", envPassKey)
+	}
+}
 
 // Send an error.
 func Send(err error) {
@@ -34,6 +42,6 @@ func Send(err error) {
 	fmt.Fprintf(&b, "\r\n%s", es)
 
 	if e := smtp.SendMail("smtp.gmail.com:587", auth, from, to, b.Bytes()); e != nil {
-		log.Println(e)
+		fmt.Fprintln(os.Stderr, e)
 	}
 }
