@@ -1,4 +1,5 @@
-// Package errmail is a way to format a error into an email.
+// Package errmail is my personal error-to-email package. You should make your
+// own.
 package errmail
 
 import (
@@ -6,18 +7,19 @@ import (
 	"fmt"
 	"log"
 	"net/smtp"
+	"os"
 	"strings"
 )
 
-type Logger struct {
-	Logger *log.Logger
-	Addr   string
-	Auth   smtp.Auth
-	From   string
-	To     []string
-}
+const from = "cron@daaku.org"
 
-func (l *Logger) Log(err error) {
+var (
+	auth = smtp.PlainAuth("", from, os.Getenv("ERRMAIL_PASS"), "smtp.gmail.com")
+	to   = []string{"n@daaku.org"}
+)
+
+// Send an error.
+func Send(err error) {
 	es := err.Error()
 
 	// subject upto the first newline
@@ -27,15 +29,11 @@ func (l *Logger) Log(err error) {
 	}
 
 	var b bytes.Buffer
-	fmt.Fprintf(&b, "To: %s\r\n", strings.Join(l.To, ", "))
+	fmt.Fprintf(&b, "To: %s\r\n", strings.Join(to, ", "))
 	fmt.Fprintf(&b, "Subject: %s\r\n", subject)
 	fmt.Fprintf(&b, "\r\n%s", es)
 
-	if e := smtp.SendMail(l.Addr, l.Auth, l.From, l.To, b.Bytes()); e != nil {
-		if l.Logger == nil {
-			log.Println(e)
-		} else {
-			l.Logger.Println(e)
-		}
+	if e := smtp.SendMail("smtp.gmail.com:587", auth, from, to, b.Bytes()); e != nil {
+		log.Println(e)
 	}
 }
