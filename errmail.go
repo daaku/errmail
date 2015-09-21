@@ -8,26 +8,38 @@ import (
 	"net/smtp"
 	"os"
 	"strings"
+	"sync/atomic"
 )
 
 const (
 	envPassKey = "ERRMAIL_PASS"
-	from       = "cron@daaku.org"
 )
 
 var (
-	auth = smtp.PlainAuth("", from, os.Getenv(envPassKey), "smtp.gmail.com")
-	to   = []string{"n@daaku.org"}
+	gmailAddr = "smtp.gmail.com:587"
+	addr      = gmailAddr
+	from      = "cron@daaku.org"
+	auth      = smtp.PlainAuth("", from, os.Getenv(envPassKey), "smtp.gmail.com")
+	to        = []string{"n@daaku.org"}
+	logged    int32
 )
 
 func init() {
-	if os.Getenv(envPassKey) == "" {
-		fmt.Fprintf(os.Stderr, "%s must be set for errmail\n", envPassKey)
-	}
+}
+
+func UseMailgun(user, pass string) {
+	from = user
+	auth = smtp.PlainAuth("", user, pass, "smtp.mailgun.org")
+	addr = "smtp.mailgun.org:587"
 }
 
 // Send an error.
 func Send(err error) {
+	if atomic.CompareAndSwapInt32(&logged, 0, 1) {
+		if os.Getenv(envPassKey) == "" && addr == gmailAddr {
+			fmt.Fprintf(os.Stderr, "%s must be set for errmail\n", envPassKey)
+		}
+	}
 	es := err.Error()
 
 	// subject upto the first newline
@@ -41,7 +53,7 @@ func Send(err error) {
 	fmt.Fprintf(&b, "Subject: %s\r\n", subject)
 	fmt.Fprintf(&b, "\r\n%s", es)
 
-	if e := smtp.SendMail("smtp.gmail.com:587", auth, from, to, b.Bytes()); e != nil {
+	if e := smtp.SendMail(addr, auth, from, to, b.Bytes()); e != nil {
 		fmt.Fprintln(os.Stderr, e)
 	}
 }
