@@ -40,7 +40,7 @@ func Send(err error) {
 			fmt.Fprintf(os.Stderr, "%s must be set for errmail\n", envPassKey)
 		}
 	}
-	es := err.Error()
+	es := fmt.Sprintf("%+v", err)
 
 	// subject upto the first newline
 	subject := es
