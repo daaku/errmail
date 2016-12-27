@@ -24,9 +24,6 @@ var (
 	logged    int32
 )
 
-func init() {
-}
-
 func UseMailgun(user, pass string) {
 	from = user
 	auth = smtp.PlainAuth("", user, pass, "smtp.mailgun.org")
