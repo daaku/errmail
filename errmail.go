@@ -38,6 +38,7 @@ func Send(err error) {
 	if atomic.CompareAndSwapInt32(&logged, 0, 1) {
 		if os.Getenv(envPassKey) == "" && addr == gmailAddr {
 			fmt.Fprintf(os.Stderr, "%s must be set for errmail\n", envPassKey)
+			return
 		}
 	}
 	es := fmt.Sprintf("%+v", err)
