@@ -55,3 +55,9 @@ func Send(err error) {
 		fmt.Fprintln(os.Stderr, e)
 	}
 }
+
+// Log and Send the error.
+func Log(err error) {
+	Send(err)
+	fmt.Fprintf(os.Stderr, "%+v\n", err)
+}
